@@ -1,0 +1,68 @@
+{
+  "name": "react-concurrent-signals",
+  "version": "0.0.1",
+  "description": "Signal functions backed by concurrent-safe React store snapshots",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./vanilla": {
+      "import": {
+        "types": "./dist/vanilla.d.ts",
+        "default": "./dist/vanilla.js"
+      },
+      "require": {
+        "types": "./dist/vanilla.d.ts",
+        "default": "./dist/vanilla.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.ts",
+        "default": "./dist/react.js"
+      },
+      "require": {
+        "types": "./dist/react.d.ts",
+        "default": "./dist/react.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:examples": "vite build examples/concurrent-safety --config vite.config.ts --outDir dist-example",
+    "dev:examples": "vite examples/concurrent-safety --config vite.config.ts --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@stylexjs/stylex": "^0.18.3",
+    "@stylexjs/unplugin": "^0.18.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.8",
+    "@vitejs/plugin-react": "^4.6.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.3.2",
+    "vitest": "^3.2.4"
+  }
+}
