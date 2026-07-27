@@ -1,0 +1,27 @@
+{
+  "name": "@react-concurrent-signals/concurrent-safety",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "waku build",
+    "deploy": "npm run build && wrangler pages deploy dist/public --project-name react-concurrent-signals",
+    "dev": "waku dev",
+    "start": "waku start"
+  },
+  "dependencies": {
+    "@stylexjs/stylex": "^0.18.3",
+    "react": "^19.1.0",
+    "react-concurrent-signals": "file:../..",
+    "react-dom": "^19.1.0",
+    "react-server-dom-webpack": "^19.2.6",
+    "waku": "^1.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@stylexjs/unplugin": "^0.18.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.8",
+    "@vitejs/plugin-react": "^4.6.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.92.0"
+  }
+}

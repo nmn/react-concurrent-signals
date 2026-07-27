@@ -20,45 +20,46 @@ export type ReadContext = {
 export type WriteContext = {
   get<Value>(signal: Signal<Value>): Value;
   set(signal: AnyWritableSignal, args: readonly unknown[]): unknown;
+  setPrimitive(signal: AnyWritableSignal, value: unknown): void;
 };
 
 let getDefaultStore: (() => SignalStoreLike) | undefined;
-const storeStack: SignalStoreLike[] = [];
-const readStack: ReadContext[] = [];
-const writeStack: WriteContext[] = [];
+let currentStore: SignalStoreLike | undefined;
+let currentReadContext: ReadContext | undefined;
+let currentWriteContext: WriteContext | undefined;
 
 export function setDefaultStoreGetter(getter: () => SignalStoreLike) {
   getDefaultStore = getter;
 }
 
 export function getActiveStore(): SignalStoreLike {
-  const activeStore = storeStack.at(-1);
-  if (activeStore) {
-    return activeStore;
+  if (currentStore) {
+    return currentStore;
   }
   if (!getDefaultStore) {
-    throw new Error("default signal store is not initialized");
+    throw Error();
   }
   return getDefaultStore();
 }
 
 export function getReadContext(): ReadContext | undefined {
-  return readStack.at(-1);
+  return currentReadContext;
 }
 
 export function getWriteContext(): WriteContext | undefined {
-  return writeStack.at(-1);
+  return currentWriteContext;
 }
 
 export function withStoreScope<Result>(
   store: SignalStoreLike,
   fn: () => Result,
 ): Result {
-  storeStack.push(store);
+  const previousStore = currentStore;
+  currentStore = store;
   try {
     return fn();
   } finally {
-    storeStack.pop();
+    currentStore = previousStore;
   }
 }
 
@@ -66,11 +67,12 @@ export function withReadContext<Result>(
   context: ReadContext,
   fn: () => Result,
 ): Result {
-  readStack.push(context);
+  const previousContext = currentReadContext;
+  currentReadContext = context;
   try {
     return fn();
   } finally {
-    readStack.pop();
+    currentReadContext = previousContext;
   }
 }
 
@@ -78,10 +80,11 @@ export function withWriteContext<Result>(
   context: WriteContext,
   fn: () => Result,
 ): Result {
-  writeStack.push(context);
+  const previousContext = currentWriteContext;
+  currentWriteContext = context;
   try {
     return fn();
   } finally {
-    writeStack.pop();
+    currentWriteContext = previousContext;
   }
 }

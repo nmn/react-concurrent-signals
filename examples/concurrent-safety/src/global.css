@@ -1,0 +1,27 @@
+@layer reset {
+  :root {
+    color: #20201c;
+    background: #f6f2e8;
+    font-family:
+      "Avenir Next", "Gill Sans", "Trebuchet MS", system-ui, sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: #f6f2e8;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+/* StyleX CSS from @stylexjs/unplugin is appended here in production builds. */

@@ -15,9 +15,11 @@ type OnMount<Args extends unknown[], Result> = (
   setSignal: (...args: Args) => Result,
 ) => OnUnmount | void;
 
-const signalBrand = Symbol("react-concurrent-signals.signal");
-const primitiveSignalBrand = Symbol("react-concurrent-signals.primitiveSignal");
-const observationBrand = Symbol("react-concurrent-signals.observation");
+const signalBrand = Symbol();
+const primitiveSignalBrand = Symbol();
+const observationBrand = Symbol();
+const observationId = Symbol();
+const observationVersion = Symbol();
 
 export interface Signal<Value> {
   (): Value;
@@ -56,6 +58,18 @@ export type AnyPrimitiveSignal = WritableSignal<unknown> &
 export type AnyObservation = Observation<unknown>;
 export type AnyNode = AnySignal | AnyObservation;
 
+type SignalWithId = {
+  readonly [signalBrand]: number;
+};
+
+type ObservationWithVersion = AnyObservation & {
+  [observationVersion]: number;
+};
+
+type ObservationWithId = AnyObservation & {
+  readonly [observationId]: number;
+};
+
 let keyCount = 0;
 let observationKeyCount = 0;
 
@@ -77,7 +91,8 @@ export function signal<Value, Args extends unknown[], Result>(
   readOrInitialValue?: Value | Read<Value>,
   write?: Write<Args, Result>,
 ) {
-  const key = `signal${++keyCount}`;
+  const id = ++keyCount;
+  const isDerived = typeof readOrInitialValue === "function";
   const config = function signalFunction() {
     return readSignal(config as AnySignal);
   } as WritableSignal<Value, Args, Result> & {
@@ -86,23 +101,27 @@ export function signal<Value, Args extends unknown[], Result>(
   };
 
   Object.defineProperties(config, {
-    [signalBrand]: { value: true },
+    [signalBrand]: { value: id },
     toString: {
       value() {
+        const key = `signal${id}`;
         return this.debugLabel ? `${key}:${this.debugLabel}` : key;
       },
     },
   });
 
-  if (typeof readOrInitialValue === "function") {
+  if (isDerived) {
     config.INTERNAL_read = readOrInitialValue as Read<Value>;
   } else {
     config.init = readOrInitialValue;
-    config.set = ((...args: unknown[]) =>
-      writeSignal(config as AnyWritableSignal, args)) as never;
+    config.set = ((value: unknown) =>
+      writePrimitiveSignal(
+        config as unknown as AnyPrimitiveSignal,
+        value,
+      )) as never;
     Object.defineProperty(config, primitiveSignalBrand, {
       configurable: true,
-      value: true,
+      writable: true,
     });
   }
 
@@ -110,7 +129,9 @@ export function signal<Value, Args extends unknown[], Result>(
     config.INTERNAL_write = write;
     config.set = ((...args: unknown[]) =>
       writeSignal(config as AnyWritableSignal, args)) as never;
-    delete config[primitiveSignalBrand];
+    if (!isDerived) {
+      delete config[primitiveSignalBrand];
+    }
   }
 
   return config;
@@ -119,18 +140,38 @@ export function signal<Value, Args extends unknown[], Result>(
 export function createObservation<Value>(
   read: Read<Value>,
 ): Observation<Value> {
-  const key = `observation${++observationKeyCount}`;
+  const id = ++observationKeyCount;
   return {
     [observationBrand]: true,
+    [observationId]: id,
+    [observationVersion]: 0,
     INTERNAL_read: read,
-    toString() {
-      return this.debugLabel ? `${key}:${this.debugLabel}` : key;
-    },
-  };
+    toString: observationToString,
+  } as Observation<Value>;
+}
+
+function observationToString(this: ObservationWithId): string {
+  const key = `observation${this[observationId]}`;
+  return this.debugLabel ? `${key}:${this.debugLabel}` : key;
+}
+
+export function getSignalId(signal: AnySignal): number {
+  return (signal as unknown as SignalWithId)[signalBrand];
+}
+
+export function getObservationVersion(observation: AnyObservation): number {
+  return (observation as ObservationWithVersion)[observationVersion];
+}
+
+export function bumpObservationVersion(observation: AnyObservation): number {
+  return ++(observation as ObservationWithVersion)[observationVersion];
 }
 
 export function isSignal(node: AnyNode): node is AnySignal {
-  return (node as AnySignal)[signalBrand] === true;
+  return (
+    typeof (node as unknown as SignalWithId)[signalBrand] ===
+    "number"
+  );
 }
 
 export function isWritableSignal(
@@ -142,7 +183,21 @@ export function isWritableSignal(
 export function isPrimitiveSignal(
   signal: AnySignal,
 ): signal is AnyPrimitiveSignal {
-  return (signal as AnyPrimitiveSignal)[primitiveSignalBrand] === true;
+  return primitiveSignalBrand in signal;
+}
+
+export function getPrimitiveDependencySet(
+  signal: AnyPrimitiveSignal,
+): ReadonlySet<AnyPrimitiveSignal> {
+  type PrimitiveWithDependencies = {
+    [primitiveSignalBrand]?: ReadonlySet<AnyPrimitiveSignal>;
+  };
+  return (
+    (signal as unknown as PrimitiveWithDependencies)[
+      primitiveSignalBrand
+    ] ||=
+      new Set([signal])
+  );
 }
 
 export function readSignal<Value>(signal: Signal<Value>): Value {
@@ -164,3 +219,24 @@ function writeSignal(signal: AnyWritableSignal, args: readonly unknown[]) {
   }
   return getActiveStore().set(signal, ...(args as unknown[]));
 }
+
+function writePrimitiveSignal(
+  signal: AnyPrimitiveSignal,
+  value: unknown,
+): void {
+  const writeContext = getWriteContext();
+  if (writeContext) {
+    writeContext.setPrimitive(signal, value);
+    return;
+  }
+  (
+    getActiveStore() as unknown as SignalStoreLikeWithPrimitiveWrite
+  ).INTERNAL_setPrimitive(signal, value);
+}
+
+type SignalStoreLikeWithPrimitiveWrite = {
+  INTERNAL_setPrimitive(
+    signal: AnyPrimitiveSignal,
+    value: unknown,
+  ): void;
+};

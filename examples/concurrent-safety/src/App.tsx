@@ -1,3 +1,5 @@
+"use client";
+
 import * as stylex from "@stylexjs/stylex";
 import {
   startTransition,
@@ -13,7 +15,7 @@ import {
   signal,
   useObserve,
   useStore,
-} from "../../../src";
+} from "react-concurrent-signals";
 
 type Gate = {
   promise: Promise<void>;

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "baseUrl": ".",
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "lib": ["esnext", "dom"],
@@ -9,7 +10,12 @@
     "noEmit": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2020"
+    "target": "ES2020",
+    "paths": {
+      "react-concurrent-signals": ["./src/index.ts"],
+      "react-concurrent-signals/react": ["./src/react.tsx"],
+      "react-concurrent-signals/vanilla": ["./src/vanilla.ts"]
+    }
   },
   "include": ["src", "tests", "examples"]
 }

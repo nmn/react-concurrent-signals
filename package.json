@@ -4,6 +4,9 @@
   "description": "Signal functions backed by concurrent-safe React store snapshots",
   "type": "module",
   "sideEffects": false,
+  "workspaces": [
+    "examples/concurrent-safety"
+  ],
   "exports": {
     ".": {
       "import": {
@@ -11,7 +14,7 @@
         "default": "./dist/index.js"
       },
       "require": {
-        "types": "./dist/index.d.ts",
+        "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
     },
@@ -21,7 +24,7 @@
         "default": "./dist/vanilla.js"
       },
       "require": {
-        "types": "./dist/vanilla.d.ts",
+        "types": "./dist/vanilla.d.cts",
         "default": "./dist/vanilla.cjs"
       }
     },
@@ -31,7 +34,7 @@
         "default": "./dist/react.js"
       },
       "require": {
-        "types": "./dist/react.d.ts",
+        "types": "./dist/react.d.cts",
         "default": "./dist/react.cjs"
       }
     }
@@ -40,9 +43,13 @@
     "dist"
   ],
   "scripts": {
+    "bench": "vitest bench --config vitest.benchmark.config.ts",
     "build": "tsup",
-    "build:examples": "vite build examples/concurrent-safety --config vite.config.ts --outDir dist-example",
-    "dev:examples": "vite examples/concurrent-safety --config vite.config.ts --host 127.0.0.1",
+    "build:examples": "npm run build --workspace @react-concurrent-signals/concurrent-safety",
+    "check:package": "node scripts/check-package.mjs",
+    "deploy:examples": "npm run deploy --workspace @react-concurrent-signals/concurrent-safety",
+    "dev:examples": "npm run dev --workspace @react-concurrent-signals/concurrent-safety",
+    "prepack": "npm run build && npm run check:package",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
